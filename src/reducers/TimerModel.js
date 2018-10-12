@@ -9,6 +9,8 @@ class TimerModel {
     }
     return {
       running: false,
+      runTimerID: -1,
+      nextTimerID: -1,
       timers: timers,
     };
   }
@@ -29,9 +31,23 @@ class TimerModel {
 
   /**
    * timerの数
+   * 
+   * @return timerLength
    */
   static get timerLength() {
     return 2;
+  }
+
+  /**
+   * 次のタイマーIDを取得
+   * @param state 
+   * @return nextTimerID
+   */
+  static nextTimerID(timerID) {
+    if(this.validateTimerID(timerID)) {
+      return ++timerID % 2;
+    }
+    return -1;
   }
 
   /**
@@ -61,8 +77,7 @@ class TimerModel {
       newState.timers[timerID].intervalID = intervalID;
     }
 
-    newState.running = this.checkRunning(newState)
-    return newState;
+    return this.updateRunning(newState);
   }
 
   /**
@@ -72,7 +87,6 @@ class TimerModel {
    * @return タイマーの停止状態
    */
   static stop(state, timerID = -1) {
-    console.log(state.timers[0])
     var newState = Object.assign([], state);
     if (timerID === -1) {
       for (var id = 0; id < this.timerLength; id++) {
@@ -86,8 +100,7 @@ class TimerModel {
       newState.timers[timerID].intervalID = -1;
     }
 
-    newState.running = this.checkRunning(newState)
-    return newState;
+    return this.updateRunning(newState);
   }
 
   /**
@@ -128,19 +141,6 @@ class TimerModel {
   }
 
   /**
-   * タイマー状態を停止に変更
-   * @param timerState 
-   * @return timerState
-   */
-  static stopTimerState(timerState) {
-    clearInterval(timerState.intervalID);
-
-    timerState.started = false;
-    timerState.intervalID = -1;
-    return timerState;
-  }
-
-  /**
    * タイマー状態を1秒更新
    * @param timerState 
    * @return timerState
@@ -162,6 +162,7 @@ class TimerModel {
    * タイマー状態をリセット
    * @param {number} timerID 
    * @param oldTimerState 
+   * @return newState
    */
   static resetTimerState(timerID, oldTimerState) {
     var newState = this.initialTimerState
@@ -174,6 +175,7 @@ class TimerModel {
    * タイマー起動状態のコピー
    * @param initTimerState 
    * @param oldTimerState 
+   * @return timerState
    */
   static copyTimerState(timerState, oldTimerState) {
     timerState.started = oldTimerState.started;
@@ -182,16 +184,36 @@ class TimerModel {
   }
   
   /**
-   * 起動状態か確認
+   * 起動中のタイマーIDを取得
    * @param state 
+   * @return timerIDs
    */
-  static checkRunning(state) {
-    for (var len = 0; len < this.timerLength; len++) {
-      if (state.timers[len].started) {
-        return true;
+  static runTimerIDs(state) {
+    var timerIDs = []
+    for (var id = 0; id < this.timerLength; id++) {
+      if (state.timers[id].started) {
+        timerIDs.push(id);
       }
     }
-    return false;
+    return timerIDs;
+  }
+
+  /**
+   * 起動状態の更新
+   * @param state 
+   */
+  static updateRunning(state) {
+    let timerIDs = this.runTimerIDs(state);
+    if (timerIDs.length === 1) {
+      state.running = true;
+      state.runTimerID = timerIDs[0];
+      state.nextTimerID = this.nextTimerID(timerIDs[0]);
+    } else {
+      state.running = false;
+      state.runTimerID = -1;
+      state.nextTimerID = -1;
+    }
+    return state;
   }
 
   static toHours(time) {

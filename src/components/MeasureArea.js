@@ -7,10 +7,10 @@ class MeasureArea extends Component {
     return (
       <Grid>
         <Row className="show-grid">
-          <Col xs={6}>
+          <Col xs={6} className="text-center">
             <TimerArea timerID={0} />
           </Col>
-          <Col xs={6}>
+          <Col xs={6} className="text-center">
             <TimerArea timerID={1} />
           </Col>
         </Row>
